@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Image Generator</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <style>
+        body {
+            background-color: black;
+            color: white;
+            font-family: Arial, sans-serif;
+            text-align: center;
+            padding: 50px;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+        nav {
+            display: flex;
+            justify-content: space-between;
+            padding: 20px;
+            background-color: #333;
+        }
+        nav h1, nav a {
+            color: white;
+            margin: 0;
+        }
+        nav a {
+            text-decoration: none;
+            color: #007BFF;
+        }
+        .container {
+            max-width: 600px; /* Limit max width for better responsiveness */
+            margin: 0 auto; /* Center the container */
+            display: flex;
+            flex-direction: column;
+            align-items: center; /* Center align the items */
+        }
+        input, button {
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+            border: 1px solid #007BFF; /* Add border for better visibility */
+            font-size: 16px;
+            width: 100%; /* Full width for responsiveness */
+            box-sizing: border-box; /* Include padding and border in width */
+        }
+        input:focus, button:focus {
+            outline: none; /* Remove default outline */
+            border-color: #0056b3; /* Change border color on focus */
+        }
+        button {
+            background-color: #007BFF;
+            color: white;
+            cursor: pointer;
+            transition: background-color 0.3s; /* Smooth transition */
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        #loading {
+            display: none;
+            font-size: 24px;
+        }
+        #output {
+            margin-top: 20px;
+        }
+        img {
+            max-width: 100%;
+            height: auto;
+            border: 2px solid white;
+            border-radius: 10px;
+        }
+        .icon-button {
+            display: inline-block;
+            padding: 10px;
+            border-radius: 50%;
+            background-color: #007BFF;
+            color: white;
+            margin: 5px;
+            cursor: pointer;
+            text-align: center;
+            width: 40px; /* Fixed width for icons */
+            height: 40px; /* Fixed height for icons */
+            line-height: 40px; /* Center the icon vertically */
+            transition: background-color 0.3s; /* Smooth transition */
+        }
+        .icon-button:hover {
+            background-color: #0056b3; /* Change color on hover */
+        }
+        footer {
+            margin-top: auto;
+            padding: 20px;
+            background-color: #333;
+            color: white;
+        }
+
+        .button {
+            background-color: #007BFF;
+            color: white;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+            border: 1px solid #007BFF; /* Add border for better visibility */
+            font-size: 16px;
+            width: 100%; /* Full width for responsiveness */
+            box-sizing: border-box; /* Include padding and border in width */
+            cursor: pointer;
+            transition: background-color 0.3s; /* Smooth transition */
+        }
+        
+        .button:hover {
+            background-color: #0056b3; /* Change color on hover */
+        }
+
+    </style>
+</head>
+<body>
+    <nav>
+        <h1>AI Super App</h1>
+        <div>
+            <a href="#">Sign Up</a> | <a href="#">Log In</a> | <a href="#">Try Premium</a>
+        </div>
+    </nav>
+
+    <div class="container">
+        <h2>AI Image Generator</h2>
+        <input type="text" id="prompt" placeholder="Enter your prompt" required>
+        <input type="text" id="hf_lora" placeholder="Enter HF Lora model" required>
+        <button id="generateBtn">Generate Image</button>
+        <div id="loading"><i class="fas fa-spinner fa-spin"></i> Generating...</div>
+        <div id="output"></div>
+    </div>
+
+    <script>
+        document.getElementById('generateBtn').onclick = async function() {
+            const prompt = document.getElementById('prompt').value;
+            const hf_lora = document.getElementById('hf_lora').value;
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('output').innerHTML = '';
+
+            const response = await fetch('/generate', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ prompt, hf_lora })
+            });
+
+            const data = await response.json();
+
+            if (data.status === 'success') {
+                const img = document.createElement('img');
+                img.src = data.image_url + '?t=' + new Date().getTime();
+                document.getElementById('output').appendChild(img);
+
+                // Create download button
+                const downloadBtn = document.createElement('a');
+                downloadBtn.href = img.src; // Ensure img.src is defined
+                downloadBtn.download = 'generated_image.png';
+                downloadBtn.innerText = 'Download Image';
+                downloadBtn.className = 'button'; // Apply button class
+                downloadBtn.style.width = '200px'; // Optional for specific width
+            
+                // Append button to output element
+                document.getElementById('output').appendChild(downloadBtn);
+
+                // Create share buttons
+                const twitterShare = document.createElement('a');
+                twitterShare.className = 'icon-button';
+                twitterShare.innerHTML = '<i class=" fab fa-twitter"></i>';
+                twitterShare.href = `https://twitter.com/intent/tweet?url=${img.src}&text=Check%20out%20this%20AI-generated%20image!`;
+                twitterShare.target = '_blank';
+                document.getElementById('output').appendChild(twitterShare);
+
+                const whatsappShare = document.createElement('a');
+                whatsappShare.className = 'icon-button';
+                whatsappShare.innerHTML = '<i class="fab fa-whatsapp"></i>';
+                whatsappShare.href = `https://api.whatsapp.com/send?text=Check%20out%20this%20AI-generated%20image!%20${img.src}`;
+                whatsappShare.target = '_blank';
+                document.getElementById('output').appendChild(whatsappShare);
+            } else {
+                document.getElementById('output').innerHTML = 'Failed to generate image. Please try again.';
+            }
+
+            document.getElementById('loading').style.display = 'none';
+        };
+    </script>
+
+    <footer>
+        <!-- Add footer content here -->
+    </footer>
+</body>
+</html>
